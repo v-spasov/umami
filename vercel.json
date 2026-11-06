@@ -1,4 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npx --yes pnpm@12.3.4 install --frozen-lockfile"
+  "installCommand": "npx --yes pnpm@12.3.4 install --frozen-lockfile",
+  "git": {
+    "deploymentEnabled": {
+      "**": false,
+      "master": true
+    }
+  },
+  "github": {
+    "autoJobCancelation": true
+  },
+  "ignoreCommand": "node .vercel-build-ignore.cjs"
 }

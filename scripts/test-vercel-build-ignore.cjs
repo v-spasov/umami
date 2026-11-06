@@ -1,0 +1,18 @@
+const assert = require('node:assert/strict');
+const { isNonRuntime, shouldSkip } = require('../.vercel-build-ignore.cjs');
+const production = { VERCEL_ENV: 'production', VERCEL_GIT_COMMIT_REF: 'main', VERCEL_GIT_PREVIOUS_SHA: 'a'.repeat(40), VERCEL_GIT_COMMIT_SHA: 'b'.repeat(40) };
+for (const file of ['README.md', 'docs/guide.md', 'mobile/ios/App.swift', 'desktop/src-tauri/tauri.conf.json', '.github/workflows/ci.yml']) assert.equal(isNonRuntime(file), true, file);
+for (const file of ['src/app/page.tsx', 'public/mobile/manifest.json', 'package-lock.json', 'pnpm-lock.yaml', 'next.config.ts', 'vercel.json', '.vercel-build-ignore.cjs', 'scripts/build.js', 'src/content/guide.md']) assert.equal(isNonRuntime(file), false, file);
+assert.equal(shouldSkip(production, () => ['docs/guide.md']), true);
+assert.equal(shouldSkip(production, () => ['docs/guide.md', 'src/app/page.tsx']), false);
+assert.equal(shouldSkip(production, () => []), true);
+assert.equal(shouldSkip({ ...production, VERCEL_GIT_PREVIOUS_SHA: '' }, () => ['README.md']), false);
+assert.equal(shouldSkip({ ...production, VERCEL_GIT_COMMIT_SHA: '--bad-ref' }, () => []), false);
+assert.equal(shouldSkip(production, () => { throw new Error('missing shallow history'); }), false);
+for (const branch of ['dependabot/npm/next', 'codex/work', 'feature/work']) assert.equal(shouldSkip({ ...production, VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: branch }, () => ['src/app/page.tsx']), true, branch);
+assert.equal(shouldSkip({ ...production, VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'preview/check' }, () => ['src/app/page.tsx']), true);
+assert.equal(shouldSkip({ ...production, VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'preview/check', FORCE_VERCEL_BUILD: '1' }, () => []), false);
+assert.equal(shouldSkip({ FORCE_VERCEL_BUILD: '1' }, () => { throw new Error('no history'); }), false);
+assert.equal(shouldSkip({ ...production, VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: '' }, () => ['src/app/page.tsx']), false);
+assert.equal(shouldSkip({}, () => []), false);
+console.log('Build suppression checks passed: manual previews, runtime changes, public assets, lockfiles and fail-open Git history.');
